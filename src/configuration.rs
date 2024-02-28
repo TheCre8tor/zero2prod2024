@@ -62,9 +62,11 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
     // Initialise our configuration reader
     let base_source = config::File::from(configuration_directory.join("base.yaml"));
     let dynamic_source = config::File::from(configuration_directory.join(environment_filename));
+    let env_var_source = config::Environment::with_prefix("APP") .prefix_separator("_") .separator("__");
     let settings = config::Config::builder()
         .add_source(base_source)
         .add_source(dynamic_source)
+        .add_source(env_var_source)
         .build()?;
 
     // Try to convert the configuration values it read into our Settings type
