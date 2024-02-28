@@ -39,6 +39,8 @@ services:
       #     property: connectionString
       - key: APP_APPLICATION__BASE_URL
         sync: false
+      - key: APP_APPLICATION__PORT
+        value: 8000
       # - key: APP_EMAIL_CLIENT__AUTHORIZATION_TOKEN
       #   sync: false
       # - key: APP_APPLICATION__HMAC_SECRET
