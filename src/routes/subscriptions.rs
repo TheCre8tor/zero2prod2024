@@ -1,10 +1,9 @@
 use actix_web::{web, HttpResponse};
 use chrono::Utc;
 use sqlx::PgPool;
-use unicode_segmentation::UnicodeSegmentation;
 use uuid::Uuid;
 
-use crate::domain::NewSubscriber;
+use crate::domain::{NewSubscriber, SubscriberName};
 
 #[derive(serde::Serialize)]
 struct JSendErrorResponse {
@@ -27,14 +26,14 @@ pub struct FormData {
     )
 )]
 pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> HttpResponse {
-    if !is_valid_name(&form.name) {
-        return HttpResponse::BadRequest().json(JSendErrorResponse {
-            status: "failed".into(),
-            message: "Invalid name, please review your input".into(),
-        });
-    }
+    // `web::Form` is a wrapper around `FormData`
+    // `form.0` gives us access to the underlying `FormData`
+    let new_subscriber = NewSubscriber {
+        email: form.0.email,
+        name: SubscriberName::parse(form.0.name).expect("Name validation failed."),
+    };
 
-    match insert_subscriber(&pool, &form).await {
+    match insert_subscriber(&pool, &new_subscriber).await {
         Ok(_) => HttpResponse::Ok().finish(),
         Err(_) => HttpResponse::InternalServerError().json(JSendErrorResponse {
             status: "failed".into(),
@@ -43,30 +42,22 @@ pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> Ht
     }
 }
 
-pub fn is_valid_name(value: &str) -> bool {
-    let is_empty_or_whitespace = value.trim().is_empty();
-    let is_too_long = value.graphemes(true).count() > 256;
-    let forbidden_characters = ['/', '(', ')', '"', '<', '>', '\\', '{', '}', '%'];
-    let contains_forbidden_chars = value
-        .chars()
-        .any(|char| forbidden_characters.contains(&char));
-
-    !(is_empty_or_whitespace || is_too_long || contains_forbidden_chars)
-}
-
 #[tracing::instrument(
     name = "Saving new subscriber details in the database",
-    skip(pool, form)
+    skip(pool, new_subscriber)
 )]
-pub async fn insert_subscriber(pool: &PgPool, form: &NewSubscriber) -> Result<(), sqlx::Error> {
+pub async fn insert_subscriber(
+    pool: &PgPool,
+    new_subscriber: &NewSubscriber,
+) -> Result<(), sqlx::Error> {
     sqlx::query!(
         r#"
         INSERT INTO subscriptions (id, email, name, subscribed_at)
         VALUES ($1, $2, $3, $4)
         "#,
         Uuid::new_v4(),
-        form.email,
-        form.name,
+        new_subscriber.email,
+        new_subscriber.name.as_ref(),
         Utc::now()
     )
     .execute(pool)

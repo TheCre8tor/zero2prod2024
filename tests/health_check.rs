@@ -129,7 +129,7 @@ async fn subscribe_returns_a_200_for_valid_form_data() {
 }
 
 #[tokio::test]
-async fn subscriber_returns_a_400_when_data_is_missing() {
+async fn subscribe_returns_a_400_when_fields_are_present_but_invalid() {
     // Arrange
     let app = spawn_app().await;
     let client = reqwest::Client::new();
@@ -137,6 +137,10 @@ async fn subscriber_returns_a_400_when_data_is_missing() {
         ("name=le%20guin", "missing the email"),
         ("email=ursula_le_guin%40gmail.com", "missing the name"),
         ("", "missing both name and email"),
+        (
+            "name=alexander{}%&email=ursula_le_guin%40gmail.com",
+            "invalid email name",
+        ),
     ];
 
     for (invalid_body, error_message) in test_cases {
