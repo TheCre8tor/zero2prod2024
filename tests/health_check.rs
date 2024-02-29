@@ -136,10 +136,11 @@ async fn subscribe_returns_a_400_when_fields_are_present_but_invalid() {
     let test_cases = vec![
         ("name=le%20guin", "missing the email"),
         ("email=ursula_le_guin%40gmail.com", "missing the name"),
+        ("name=le%20guin&email=", "invalid email"),
         ("", "missing both name and email"),
         (
             "name=alexander{}%&email=ursula_le_guin%40gmail.com",
-            "invalid email name",
+            "invalid subscriber name",
         ),
     ];
 
