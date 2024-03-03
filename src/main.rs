@@ -20,7 +20,11 @@ async fn main() -> Result<(), std::io::Error> {
         .sender()
         .expect("Invalid sender email address");
 
-    let email_client = EmailClient::new(configuration.email_client.base_url, sender_email);
+    let email_client = EmailClient::new(
+        configuration.email_client.base_url,
+        sender_email,
+        configuration.email_client.authorization_token,
+    );
 
     let connection_pool = PgPoolOptions::new().connect_lazy_with(configuration.database.with_db());
     let address = format!(
