@@ -10,7 +10,7 @@ services:
     rootDir: .
     dockerCommand: ./zero2prod # optional (defaults to Dockerfile command)
     numInstances: 1 # optional (defaults to 1)
-    healthCheckPath: /health_check
+    healthCheckPath: /health-check
     envVars:
       - key: APP_DATABASE__USERNAME
         fromDatabase:

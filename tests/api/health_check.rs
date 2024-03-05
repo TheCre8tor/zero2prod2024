@@ -7,7 +7,7 @@ async fn health_check_works() {
     let client = reqwest::Client::new();
 
     // Act
-    let endpoint = format!("{}/health_check", &app.address);
+    let endpoint = format!("{}/health-check", &app.address);
 
     let response = client
         .get(&endpoint)
