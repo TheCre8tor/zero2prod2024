@@ -15,6 +15,16 @@ FROM chef as builder
 COPY --from=planner /app/recipe.json recipe.json
 # Build our project dependencies, not our application!
 RUN cargo chef cook --release --recipe-path recipe.json
+
+# ARG SQLX_VERSION=0.7.1
+# ARG SQLX_FEATURES=rustls,postgres
+# RUN cargo install sqlx-cli \
+#           --version=$SQLX_VERSION \
+#           --features $SQLX_FEATURES \
+#           --no-default-features \
+#           --locked
+# RUN DATABASE_URL="postgres://postgres:password@127.0.0.1:5432/newsletter" cargo sqlx prepare
+
 # Up to this point, if our dependency tree stays the same, 
 # all layers should be cached.
 COPY . .
