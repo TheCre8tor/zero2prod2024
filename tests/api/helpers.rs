@@ -3,6 +3,7 @@ use sqlx::postgres::PgPoolOptions;
 use sqlx::{Executor, PgPool};
 
 use uuid::Uuid;
+use wiremock::MockServer;
 use zero2prod::configuration::{get_configuration, DatabaseSettings};
 use zero2prod::startup::{get_connection_pool, Application};
 use zero2prod::telemetry::{get_subscriber, init_subscriber};
@@ -23,6 +24,7 @@ static TRACING: Lazy<()> = Lazy::new(|| {
 pub struct TestApp {
     pub address: String,
     pub db_pool: PgPool,
+    pub email_server: MockServer,
 }
 
 impl TestApp {
@@ -42,10 +44,14 @@ pub async fn spawn_app() -> TestApp {
     // All other invocations will instead skip execution.
     Lazy::force(&TRACING);
 
+    let email_server = MockServer::start().await;
+
     let configuration = {
         let mut config = get_configuration().expect("Failed to read configuration");
         config.database.database_name = Uuid::new_v4().to_string();
         config.application.port = 0;
+
+        config.email_client.base_url = email_server.uri();
 
         config
     };
@@ -61,7 +67,11 @@ pub async fn spawn_app() -> TestApp {
 
     let db_pool = get_connection_pool(&configuration.database);
 
-    TestApp { address, db_pool }
+    TestApp {
+        address,
+        db_pool,
+        email_server,
+    }
 }
 
 async fn configure_database(config: &DatabaseSettings) -> PgPool {
